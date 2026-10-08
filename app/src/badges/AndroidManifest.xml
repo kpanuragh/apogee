@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The notification listener that feeds tile badges, kept out of the standard flavour:
+  Google Play Protect blocks sideloaded APKs that declare
+  BIND_NOTIFICATION_LISTENER_SERVICE in some regions, and badges are not worth making the
+  whole launcher uninstallable.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <service
+            android:name=".data.BadgeListenerService"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

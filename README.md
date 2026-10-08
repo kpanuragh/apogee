@@ -37,15 +37,32 @@ right. No app drawer grid, no rounded icons, no drop shadows.
 - Toggles for live tile animation, press tilt and notification badges, plus wallpaper and a
   Start screen reset.
 
+## Two builds
+
+| Flavour | Permissions | Play Protect |
+| --- | --- | --- |
+| `standard` (default) | none at all | installs cleanly |
+| `badges` | notification listener | blocked as a sideload in some regions |
+
+Apogee asks for no permissions. Launching the wallpaper picker, uninstalling through
+`ACTION_DELETE` and haptics via `performHapticFeedback` all work without one.
+
+The one exception is notification-count badges on tiles, which need a
+`NotificationListenerService`. Google Play Protect blocks sideloaded APKs that declare one
+("App blocked to protect your device"), so that service lives in its own `badges` flavour
+and the default build ships without it. Take `badges` only if you want the counts and are
+willing to approve that warning.
+
 ## Building
 
 The Android SDK is the only prerequisite; everything else comes down with the wrapper.
 
 ```sh
-./gradlew assembleDebug          # app/build/outputs/apk/debug/app-debug.apk
-./gradlew testDebugUnitTest      # unit tests
-./gradlew lintDebug              # lint
-./gradlew installDebug           # install on a connected device
+./gradlew assembleStandardRelease   # app/build/outputs/apk/standard/release/
+./gradlew assembleBadgesRelease     # the badges flavour
+./gradlew testStandardDebugUnitTest # unit tests
+./gradlew lintStandardDebug         # lint
+./gradlew installStandardDebug      # install on a connected device
 ```
 
 Point Gradle at your SDK with `local.properties` (`sdk.dir=/path/to/android-sdk`) or the
@@ -61,9 +78,9 @@ debug-signed APK cannot be published to Play. To sign with your own key, set
 After installing, make Apogee your home app: **Settings → Apps → Default apps → Home app**, or
 use *set Apogee as your home screen* in Apogee's own settings.
 
-Notification badges need notification access, which Android only grants explicitly — the
-badges toggle in settings sends you to the right screen. Nothing is counted until you grant
-it.
+Notification badges (the `badges` flavour only) need notification access, which Android
+grants explicitly — the badges toggle in settings sends you to the right screen. Nothing is
+counted until you grant it, and the toggle is hidden entirely in the standard build.
 
 - `minSdk` 24, `targetSdk` 35
 - Kotlin, Android views (no Compose); `androidx.appcompat`, `recyclerview`, `viewpager2`
@@ -80,7 +97,7 @@ and download **apogee-release-apk**.
 when you push to `main`, when you push a `v*` tag, or on demand from the Actions tab:
 
 - **Push to `main`** — tags `v<versionName>` (read from `app/build.gradle.kts`) and releases
-  it. A version that already has a release is left alone, so pushing again does not
+  both flavours' APKs under it. A version that already has a release is left alone, so pushing again does not
   re-release it; bump `versionName` to cut the next one.
 - **Push a tag** — `git tag v1.1 && git push origin v1.1` releases exactly that tag.
 - **Manual run** — name a tag, or leave it blank for `v<versionName>`.
@@ -102,7 +119,8 @@ fresh debug key — Android will refuse to install it over a previous build, so 
 
 ```
 data/      AppRepository (LauncherApps-backed app list), TileStore (persisted layout),
-           TilePacker (the grid packing rule), Prefs, BadgeListenerService
+           TilePacker (the grid packing rule), Prefs, BadgeCounts
+           (BadgeListenerService lives in src/badges, the flavour that declares it)
 ui/start/  TileGrid (custom ViewGroup: packing, drag reorder, edit mode), TileView (draws
            one tile, including the press tilt and live faces), StartPage
 ui/applist/AppListPage, AppListAdapter, LetterPickerView (the jump list)

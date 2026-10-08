@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.SET_WALLPAPER" />
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
-    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <!--
+      Apogee requests no permissions. Launching the wallpaper picker, uninstalling through
+      ACTION_DELETE and haptics via performHapticFeedback all work without one, and an APK
+      that asks for nothing sensitive installs without a Play Protect warning.
+
+      The `badges` flavour adds a notification listener on top of this; see
+      src/badges/AndroidManifest.xml.
+    -->
 
     <!-- Launchers are exempt from package-visibility filtering for LauncherApps, but the
          declaration keeps PackageManager label lookups working on API 30+. -->
@@ -60,15 +64,5 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".data.BadgeListenerService"
-            android:exported="false"
-            android:label="@string/app_name"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
     </application>
 </manifest>

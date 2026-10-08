@@ -26,7 +26,8 @@ import androidx.viewpager2.widget.ViewPager2
 import io.apogee.launcher.ApogeeApp
 import io.apogee.launcher.R
 import io.apogee.launcher.data.AppInfo
-import io.apogee.launcher.data.BadgeListenerService
+import io.apogee.launcher.BuildConfig
+import io.apogee.launcher.data.BadgeCounts
 import io.apogee.launcher.data.Prefs
 import io.apogee.launcher.data.Tile
 import io.apogee.launcher.data.TileKind
@@ -141,7 +142,7 @@ class LauncherActivity : AppCompatActivity(), TileGrid.Host, Prefs.Listener {
                 }
                 launch {
                     // A badge change only repaints; the layout is unaffected.
-                    BadgeListenerService.Badges.counts.collect { startPage.grid.rebind() }
+                    BadgeCounts.counts.collect { startPage.grid.rebind() }
                 }
             }
         }
@@ -267,8 +268,10 @@ class LauncherActivity : AppCompatActivity(), TileGrid.Host, Prefs.Listener {
         }
         val color = tile.color
             ?: if (prefs.colorFromIcon && info != null) info.iconColor else prefs.accent
-        val badge = if (prefs.badgesEnabled && tile.kind == TileKind.APP) {
-            BadgeListenerService.Badges.countFor(tile.component?.packageName)
+        val badge = if (
+            BuildConfig.BADGES_AVAILABLE && prefs.badgesEnabled && tile.kind == TileKind.APP
+        ) {
+            BadgeCounts.countFor(tile.component?.packageName)
         } else {
             0
         }

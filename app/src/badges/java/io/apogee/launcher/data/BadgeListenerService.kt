@@ -2,14 +2,16 @@ package io.apogee.launcher.data
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Counts active notifications per package so tiles can show live badges, the way Windows 10
- * Mobile shows an unread count on Mail and Messaging. Entirely opt-in: nothing is counted
- * unless the user grants notification access in settings.
+ * Mobile shows an unread count on Mail and Messaging.
+ *
+ * This lives in the `badges` flavour only. Declaring a notification listener makes Google
+ * Play Protect block the APK as a sideload in some regions, so the standard build ships
+ * without it and the counts in [BadgeCounts] simply stay empty.
+ *
+ * Entirely opt-in even here: nothing is counted until the user grants notification access.
  */
 class BadgeListenerService : NotificationListenerService() {
 
@@ -30,22 +32,9 @@ class BadgeListenerService : NotificationListenerService() {
             if (sbn.notification?.group != null && isSummary(sbn)) continue
             counts[sbn.packageName] = (counts[sbn.packageName] ?: 0) + 1
         }
-        Badges.update(counts)
+        BadgeCounts.update(counts)
     }
 
     private fun isSummary(sbn: StatusBarNotification): Boolean =
         sbn.notification.flags and android.app.Notification.FLAG_GROUP_SUMMARY != 0
-
-    /** Per-package notification counts, empty until notification access is granted. */
-    object Badges {
-        private val _counts = MutableStateFlow<Map<String, Int>>(emptyMap())
-        val counts: StateFlow<Map<String, Int>> = _counts.asStateFlow()
-
-        fun update(next: Map<String, Int>) {
-            _counts.value = next
-        }
-
-        fun countFor(packageName: String?): Int =
-            packageName?.let { _counts.value[it] } ?: 0
-    }
 }

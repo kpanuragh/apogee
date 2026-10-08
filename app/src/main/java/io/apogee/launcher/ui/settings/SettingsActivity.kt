@@ -98,7 +98,7 @@ class SettingsActivity : AppCompatActivity() {
         switchRow(R.string.pref_tilt, R.string.pref_tilt_summary, prefs.tiltOnPress) {
             prefs.tiltOnPress = it
         }
-        badgeRow()
+        if (BuildConfig.BADGES_AVAILABLE) badgeRow()
         hiddenApps()
 
         header(R.string.settings_about)

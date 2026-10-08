@@ -90,21 +90,24 @@ jobs:
           APOGEE_KEYSTORE_PASSWORD: ${{ secrets.APOGEE_KEYSTORE_PASSWORD }}
           APOGEE_KEY_ALIAS: ${{ secrets.APOGEE_KEY_ALIAS }}
           APOGEE_KEY_PASSWORD: ${{ secrets.APOGEE_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleStandardRelease assembleBadgesRelease
 
-      - name: Name the APK after the tag
+      - name: Name the APKs after the tag
         id: apk
         if: steps.meta.outputs.exists == 'false'
         run: |
           set -euo pipefail
-          src=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
-          if [ -z "$src" ]; then
-            echo "::error::no APK was produced"
-            exit 1
-          fi
-          dest="apogee-${{ steps.meta.outputs.tag }}.apk"
-          cp "$src" "$dest"
-          echo "path=$dest" >> "$GITHUB_OUTPUT"
+          tag="${{ steps.meta.outputs.tag }}"
+          for flavour in standard badges; do
+            src=$(find "app/build/outputs/apk/$flavour/release" -name "*.apk" | head -1)
+            if [ -z "$src" ]; then
+              echo "::error::no $flavour APK was produced"
+              exit 1
+            fi
+            cp "$src" "apogee-$tag-$flavour.apk"
+          done
+          echo "standard=apogee-$tag-standard.apk" >> "$GITHUB_OUTPUT"
+          echo "badges=apogee-$tag-badges.apk" >> "$GITHUB_OUTPUT"
 
       # Creates the tag at this commit if it does not exist yet, which is how a push to
       # main ends up tagged.
@@ -115,12 +118,19 @@ jobs:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: Apogee ${{ steps.meta.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          files: ${{ steps.apk.outputs.path }}
+          files: |
+            ${{ steps.apk.outputs.standard }}
+            ${{ steps.apk.outputs.badges }}
           generate_release_notes: true
           body: |
             A Windows 10 Mobile-style home screen for Android.
 
-            Download `${{ steps.apk.outputs.path }}` below and sideload it, then set Apogee
-            as your home app: **Settings → Apps → Default apps → Home app**.
+            Download **`${{ steps.apk.outputs.standard }}`** below and sideload it, then set
+            Apogee as your home app: **Settings → Apps → Default apps → Home app**.
+
+            `${{ steps.apk.outputs.badges }}` is the same launcher plus notification-count
+            badges on tiles. It declares a notification listener, which makes Google Play
+            Protect block the install in some regions — only take it if you want badges and
+            are willing to approve that.
 
             Signed with ${{ env.HAS_KEYSTORE == 'true' && 'the repository upload key' || 'a per-build debug key, so uninstall any previous build before installing this one' }}.

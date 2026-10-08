@@ -22,7 +22,25 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.1"
+    }
+
+    // Two builds of the same launcher. `standard` asks for nothing at all and installs
+    // without a Play Protect warning; `badges` adds the notification listener that powers
+    // live tile badges, at the cost of that warning when sideloaded.
+    flavorDimensions += "notifications"
+
+    productFlavors {
+        create("standard") {
+            dimension = "notifications"
+            isDefault = true
+            buildConfigField("boolean", "BADGES_AVAILABLE", "false")
+        }
+        create("badges") {
+            dimension = "notifications"
+            buildConfigField("boolean", "BADGES_AVAILABLE", "true")
+            versionNameSuffix = "-badges"
+        }
     }
 
     signingConfigs {
