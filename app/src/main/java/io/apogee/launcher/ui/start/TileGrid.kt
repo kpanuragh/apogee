@@ -16,6 +16,7 @@ import io.apogee.launcher.data.AppInfo
 import io.apogee.launcher.data.Tile
 import io.apogee.launcher.data.TilePacker
 import io.apogee.launcher.data.TileSize
+import io.apogee.launcher.data.live.TileLive
 import io.apogee.launcher.util.dp
 import kotlin.math.hypot
 
@@ -37,6 +38,7 @@ class TileGrid(context: Context) : ViewGroup(context) {
         val color: Int,
         val monochrome: Boolean,
         val badge: Int,
+        val live: TileLive?,
     )
 
     interface Host {
@@ -148,6 +150,7 @@ class TileGrid(context: Context) : ViewGroup(context) {
             transparent = host.transparentTiles,
             tiltEnabled = host.tiltEnabled,
             badgeCount = content.badge,
+            live = content.live,
         )
     }
 

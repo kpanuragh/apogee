@@ -59,6 +59,16 @@ class Prefs private constructor(private val sp: SharedPreferences) {
         get() = sp.getBoolean(KEY_BADGES, false)
         set(v) = sp.edit { putBoolean(KEY_BADGES, v) }
 
+    /** Show the next calendar event on the calendar tile; needs READ_CALENDAR. */
+    var calendarOnTiles: Boolean
+        get() = sp.getBoolean(KEY_CALENDAR, false)
+        set(v) = sp.edit { putBoolean(KEY_CALENDAR, v) }
+
+    /** Show the latest notification's text on a tile, not just a count. */
+    var notificationText: Boolean
+        get() = sp.getBoolean(KEY_NOTIFICATION_TEXT, false)
+        set(v) = sp.edit { putBoolean(KEY_NOTIFICATION_TEXT, v) }
+
     var liveTiles: Boolean
         get() = sp.getBoolean(KEY_LIVE_TILES, true)
         set(v) = sp.edit { putBoolean(KEY_LIVE_TILES, v) }
@@ -89,6 +99,8 @@ class Prefs private constructor(private val sp: SharedPreferences) {
         const val KEY_MORE_TILES = "show_more_tiles"
         const val KEY_BADGES = "badges"
         const val KEY_LIVE_TILES = "live_tiles"
+        const val KEY_CALENDAR = "calendar_on_tiles"
+        const val KEY_NOTIFICATION_TEXT = "notification_text"
         const val KEY_TILT = "tilt"
         const val KEY_HIDDEN = "hidden_apps"
         const val KEY_LAYOUT = "layout"

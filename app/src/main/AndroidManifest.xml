@@ -2,13 +2,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
-      Apogee requests no permissions. Launching the wallpaper picker, uninstalling through
-      ACTION_DELETE and haptics via performHapticFeedback all work without one, and an APK
-      that asks for nothing sensitive installs without a Play Protect warning.
+      Apogee requests nothing at install time. Launching the wallpaper picker, uninstalling
+      through ACTION_DELETE and haptics via performHapticFeedback all work without a
+      permission, and the next alarm comes from AlarmManager for free.
 
       The `badges` flavour adds a notification listener on top of this; see
       src/badges/AndroidManifest.xml.
     -->
+
+    <!--
+      The one permission, and it is optional: the calendar tile shows the next event only
+      once the user grants this from settings. Everything else works without it. Calendar is
+      not one of the permissions Play Protect blocks a sideload over (SMS, call log,
+      notification listener, accessibility).
+    -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
 
     <!-- Launchers are exempt from package-visibility filtering for LauncherApps, but the
          declaration keeps PackageManager label lookups working on API 30+. -->

@@ -4,7 +4,7 @@ import android.content.ComponentName
 import org.json.JSONObject
 
 /** What a tile shows. App tiles carry a component; the rest render their own live content. */
-enum class TileKind { APP, CLOCK, CALENDAR, ALL_APPS, SETTINGS }
+enum class TileKind { APP, CLOCK, CALENDAR, MEDIA, ALL_APPS, SETTINGS }
 
 /**
  * One pinned tile on the Start screen. Tiles are stored in order and packed into the grid

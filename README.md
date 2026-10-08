@@ -20,8 +20,11 @@ right. No app drawer grid, no rounded icons, no drop shadows.
 - Drag to rearrange, with the rest of the grid reflowing live around the tile you are holding.
 - The Windows Phone press effect: tiles pivot about their centre so the corner under your
   finger sinks into the screen.
-- Built-in live tiles for the clock and the date, which flip between faces, plus optional
-  notification-count badges on app tiles.
+- Tiles that actually say something, flipping between faces:
+  - **clock** — the time, flipping to the next alarm (`AlarmManager`, no permission)
+  - **calendar** — today's date, flipping to the next event and when it starts
+  - **now playing** — the current track with its artist and album
+  - **app tiles** — an unread count, and the latest notification line behind it
 - Transparent tile mode, which lets your wallpaper show through the Start screen.
 
 **App list**
@@ -42,19 +45,22 @@ right. No app drawer grid, no rounded icons, no drop shadows.
 
 ## Two builds
 
-| Flavour | Permissions | Play Protect |
+| Flavour | Live sources | Play Protect |
 | --- | --- | --- |
-| `standard` (default) | none at all | installs cleanly |
-| `badges` | notification listener | blocked as a sideload in some regions |
+| `standard` (default) | clock, next alarm, next calendar event | installs cleanly |
+| `badges` | the above, plus now playing, notification counts and text | blocked as a sideload in some regions |
 
-Apogee asks for no permissions. Launching the wallpaper picker, uninstalling through
-`ACTION_DELETE` and haptics via `performHapticFeedback` all work without one.
+Apogee asks for nothing at install time. The wallpaper picker, uninstalling through
+`ACTION_DELETE`, haptics and the next alarm all work without a permission. The calendar tile
+needs `READ_CALENDAR`, which you grant from settings when you want it and which nothing
+touches until you do.
 
-The one exception is notification-count badges on tiles, which need a
+Live content has one hard limit: Android has no live-tile API, so what an arbitrary app is
+doing can only be read from its notifications or a media session, and both need a
 `NotificationListenerService`. Google Play Protect blocks sideloaded APKs that declare one
 ("App blocked to protect your device"), so that service lives in its own `badges` flavour
-and the default build ships without it. Take `badges` only if you want the counts and are
-willing to approve that warning.
+and the default build ships without it. Take `badges` if you want now playing, counts and
+notification text, and are willing to approve that warning.
 
 ## Building
 
@@ -122,8 +128,11 @@ fresh debug key — Android will refuse to install it over a previous build, so 
 
 ```
 data/      AppRepository (LauncherApps-backed app list), TileStore (persisted layout),
-           TilePacker (the grid packing rule), Prefs, BadgeCounts
-           (BadgeListenerService lives in src/badges, the flavour that declares it)
+           TilePacker (the grid packing rule), Prefs
+data/live/ LiveTileRepository (alarm and calendar), LiveFeed (what only a notification
+           listener can see), LiveModels; BadgeListenerService lives in src/badges, the
+           flavour that declares it
+ui/start/  LiveTileText turns the raw state into the line each tile kind shows
 ui/start/  TileGrid (custom ViewGroup: pixel geometry, drag reorder, edit mode), TileView
            (draws one tile, including the press tilt and live faces), StartPage
 ui/applist/AppListPage, AppListAdapter, LetterPickerView (the jump list)

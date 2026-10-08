@@ -1,6 +1,7 @@
 package io.apogee.launcher.ui.settings
 
 import android.graphics.Color
+import android.Manifest
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
@@ -11,6 +12,7 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SwitchCompat
@@ -19,6 +21,9 @@ import io.apogee.launcher.ApogeeApp
 import io.apogee.launcher.BuildConfig
 import io.apogee.launcher.R
 import io.apogee.launcher.data.Prefs
+import io.apogee.launcher.data.Tile
+import io.apogee.launcher.data.TileKind
+import io.apogee.launcher.data.TileSize
 import io.apogee.launcher.util.AccentPalette
 import io.apogee.launcher.util.Launch
 import io.apogee.launcher.util.applySystemBarPadding
@@ -98,7 +103,25 @@ class SettingsActivity : AppCompatActivity() {
         switchRow(R.string.pref_tilt, R.string.pref_tilt_summary, prefs.tiltOnPress) {
             prefs.tiltOnPress = it
         }
-        if (BuildConfig.BADGES_AVAILABLE) badgeRow()
+        calendarRow()
+        if (BuildConfig.BADGES_AVAILABLE) {
+            badgeRow()
+            switchRow(
+                R.string.pref_notification_text,
+                R.string.pref_notification_text_summary,
+                prefs.notificationText,
+            ) { prefs.notificationText = it }
+        }
+        actionRow(
+            getString(R.string.pref_add_media_tile),
+            getString(R.string.pref_add_media_tile_summary),
+        ) {
+            app.tiles.replaceAll(
+                app.tiles.tiles.value +
+                    Tile(Tile.newId(), TileKind.MEDIA, TileSize.WIDE),
+            )
+            Toast.makeText(this, R.string.media_tile_added, Toast.LENGTH_SHORT).show()
+        }
         hiddenApps()
 
         header(R.string.settings_about)
@@ -281,6 +304,49 @@ class SettingsActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams(0, dp(52f), 1f).apply { marginEnd = dp(6f) },
             )
         }
+    }
+
+    /**
+     * Reading the calendar needs a runtime permission, so the switch asks for it and only
+     * turns itself on once it is actually held.
+     */
+    private fun calendarRow() {
+        val granted = app.liveTiles.hasCalendarPermission()
+        val row = row()
+        row.addView(
+            labelColumn(
+                getString(R.string.pref_calendar),
+                if (granted) {
+                    getString(R.string.pref_calendar_summary)
+                } else {
+                    getString(R.string.pref_calendar_grant)
+                },
+            ),
+            LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f),
+        )
+        val toggle = SwitchCompat(this).apply {
+            isChecked = prefs.calendarOnTiles && granted
+            setOnCheckedChangeListener { button, checked ->
+                if (checked && !app.liveTiles.hasCalendarPermission()) {
+                    button.isChecked = false
+                    calendarPermission.launch(Manifest.permission.READ_CALENDAR)
+                } else {
+                    prefs.calendarOnTiles = checked
+                    app.liveTiles.refresh()
+                }
+            }
+        }
+        row.addView(toggle)
+        row.setOnClickListener { toggle.toggle() }
+        container.addView(row, matchWidth())
+    }
+
+    private val calendarPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        prefs.calendarOnTiles = granted
+        app.liveTiles.refresh()
+        rebuild()
     }
 
     private fun badgeRow() {

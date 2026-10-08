@@ -57,6 +57,18 @@
     <string name="pref_version">version</string>
 
     <string name="clock_tile">clock</string>
+    <string name="media_tile">now playing</string>
+    <string name="live_alarm">alarm %1$s</string>
+    <string name="live_today">today</string>
+    <string name="live_tomorrow">tomorrow</string>
+    <string name="pref_calendar">calendar events on tiles</string>
+    <string name="pref_calendar_summary">show the next event on the calendar tile</string>
+    <string name="pref_calendar_grant">tap to allow calendar access</string>
+    <string name="pref_notification_text">notification text on tiles</string>
+    <string name="pref_notification_text_summary">show the latest message, not just a count</string>
+    <string name="pref_add_media_tile">add a now playing tile</string>
+    <string name="pref_add_media_tile_summary">pins a tile showing the current track</string>
+    <string name="media_tile_added">now playing tile pinned</string>
     <string name="calendar_tile">calendar</string>
     <string name="apogee_settings_tile">Apogee</string>
 

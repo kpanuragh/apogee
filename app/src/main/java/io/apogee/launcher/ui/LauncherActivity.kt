@@ -28,6 +28,7 @@ import io.apogee.launcher.R
 import io.apogee.launcher.data.AppInfo
 import io.apogee.launcher.BuildConfig
 import io.apogee.launcher.data.BadgeCounts
+import io.apogee.launcher.data.live.LiveFeed
 import io.apogee.launcher.data.Prefs
 import io.apogee.launcher.data.Tile
 import io.apogee.launcher.data.TileKind
@@ -35,11 +36,13 @@ import io.apogee.launcher.data.TileSize
 import io.apogee.launcher.ui.applist.AppListPage
 import io.apogee.launcher.ui.settings.SettingsActivity
 import io.apogee.launcher.ui.start.StartPage
+import io.apogee.launcher.ui.start.LiveTileText
 import io.apogee.launcher.ui.start.TileGrid
 import io.apogee.launcher.ui.start.TileView
 import io.apogee.launcher.util.Launch
 import io.apogee.launcher.util.applySystemBarPadding
 import io.apogee.launcher.util.startActivitySafely
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
@@ -52,6 +55,7 @@ class LauncherActivity : AppCompatActivity(), TileGrid.Host, Prefs.Listener {
     private val prefs get() = app.prefs
     private val tileStore get() = app.tiles
     private val appRepository get() = app.apps
+    private val liveTiles get() = app.liveTiles
 
     private lateinit var pager: ViewPager2
     private lateinit var startPage: StartPage
@@ -64,6 +68,7 @@ class LauncherActivity : AppCompatActivity(), TileGrid.Host, Prefs.Listener {
     /** Keeps the clock and calendar tiles honest without polling. */
     private val timeTicker = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
+            liveTiles.refresh()
             startPage.grid.refreshLiveFaces()
         }
     }
@@ -143,6 +148,18 @@ class LauncherActivity : AppCompatActivity(), TileGrid.Host, Prefs.Listener {
                     // A badge change only repaints; the layout is unaffected.
                     BadgeCounts.counts.collect { startPage.grid.rebind() }
                 }
+                launch {
+                    combine(
+                        LiveFeed.nowPlaying,
+                        LiveFeed.notificationLines,
+                    ) { playing, lines -> playing to lines }
+                        .collect { (playing, lines) ->
+                            liveTiles.onFeedChanged(playing, lines)
+                        }
+                }
+                launch {
+                    liveTiles.state.collect { startPage.grid.rebind() }
+                }
             }
         }
     }
@@ -168,6 +185,7 @@ class LauncherActivity : AppCompatActivity(), TileGrid.Host, Prefs.Listener {
     override fun onResume() {
         super.onResume()
         appRepository.reload()
+        liveTiles.refresh()
         startPage.grid.rebind()
         if (pager.currentItem == PAGE_START) startPage.grid.startLiveTicker(prefs.liveTiles)
     }
@@ -261,6 +279,7 @@ class LauncherActivity : AppCompatActivity(), TileGrid.Host, Prefs.Listener {
         val monochrome = prefs.monochromeIcons
         val glyph = when (tile.kind) {
             TileKind.APP -> info?.let { glyphFor(it, monochrome) }
+            TileKind.MEDIA -> AppCompatResources.getDrawable(this, R.drawable.ic_media)
             TileKind.ALL_APPS -> AppCompatResources.getDrawable(this, R.drawable.ic_all_apps)
             TileKind.SETTINGS -> AppCompatResources.getDrawable(this, R.drawable.ic_settings_gear)
             else -> null
@@ -274,12 +293,20 @@ class LauncherActivity : AppCompatActivity(), TileGrid.Host, Prefs.Listener {
         } else {
             0
         }
+        val live = LiveTileText.forTile(
+            context = this,
+            tile = tile,
+            state = liveTiles.state.value,
+            appLabel = info?.label,
+            notificationTextEnabled = BuildConfig.BADGES_AVAILABLE && prefs.notificationText,
+        )
         return TileGrid.Content(
             app = info,
             glyph = glyph,
             color = color,
             monochrome = monochrome,
             badge = badge,
+            live = live,
         )
     }
 
@@ -308,7 +335,16 @@ class LauncherActivity : AppCompatActivity(), TileGrid.Host, Prefs.Listener {
             TileKind.CALENDAR -> startActivitySafely(
                 Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_CALENDAR),
             )
+            TileKind.MEDIA -> openNowPlaying()
         }
+    }
+
+    /** Straight into the app that is playing, falling back to the music category. */
+    private fun openNowPlaying() {
+        val playing = liveTiles.state.value.nowPlaying?.packageName
+        val intent = playing?.let { packageManager.getLaunchIntentForPackage(it) }
+            ?: Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_APP_MUSIC)
+        startActivitySafely(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
     override fun onUnpin(tile: Tile) {

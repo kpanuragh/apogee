@@ -20,6 +20,7 @@ import io.apogee.launcher.data.AppInfo
 import io.apogee.launcher.data.Tile
 import io.apogee.launcher.data.TileKind
 import io.apogee.launcher.data.TileSize
+import io.apogee.launcher.data.live.TileLive
 import io.apogee.launcher.util.AccentPalette
 import io.apogee.launcher.util.dpf
 import io.apogee.launcher.util.sp
@@ -59,6 +60,10 @@ class TileView(context: Context) : View(context) {
 
     var tiltEnabled: Boolean = true
     var transparent: Boolean = false
+    /** Live content for the back face; null when there is nothing to say. */
+    var live: TileLive? = null
+        private set
+
     var badgeCount: Int = 0
         set(value) {
             if (field != value) {
@@ -106,6 +111,7 @@ class TileView(context: Context) : View(context) {
         transparent: Boolean,
         tiltEnabled: Boolean,
         badgeCount: Int,
+        live: TileLive?,
     ) {
         this.tile = tile
         this.app = app
@@ -114,17 +120,22 @@ class TileView(context: Context) : View(context) {
         this.transparent = transparent
         this.tiltEnabled = tiltEnabled
         this.badgeCount = badgeCount
+        this.live = live
         foreground = if (transparent) Color.WHITE else AccentPalette.contrastOn(tileColor)
         contentDescription = displayLabel()
         cancelFlip()
         invalidate()
     }
 
-    /** Tiles with something live to say can flip; plain app tiles stay put. */
-    fun hasBackFace(): Boolean = when (tile.kind) {
-        TileKind.CLOCK -> true
-        TileKind.CALENDAR -> true
-        TileKind.APP -> badgeCount > 0 && tile.size.showsLabel
+    /**
+     * Tiles with something live to say can flip. A tile too small to hold a line of text
+     * never does, however much it has to report.
+     */
+    fun hasBackFace(): Boolean = when {
+        !tile.size.showsLabel -> false
+        live != null -> true
+        tile.kind == TileKind.CLOCK || tile.kind == TileKind.CALENDAR -> true
+        tile.kind == TileKind.APP -> badgeCount > 0
         else -> false
     }
 
@@ -282,6 +293,10 @@ class TileView(context: Context) : View(context) {
 
     private fun drawFrontFace(canvas: Canvas) {
         when (tile.kind) {
+            // Nothing is more useful on a now-playing tile than the track, so it leads
+            // rather than hiding on the back face.
+            TileKind.MEDIA -> live?.let { drawLiveFace(canvas, it) }
+                ?: drawGlyphTile(canvas, displayLabel())
             TileKind.CLOCK -> drawClock(canvas)
             TileKind.CALENDAR -> drawCalendar(canvas)
             TileKind.ALL_APPS -> drawGlyphTile(canvas, context.getString(R.string.all_apps))
@@ -291,11 +306,63 @@ class TileView(context: Context) : View(context) {
     }
 
     private fun drawBackFace(canvas: Canvas) {
+        live?.let {
+            drawLiveFace(canvas, it)
+            return
+        }
         when (tile.kind) {
             TileKind.CLOCK -> drawClockBack(canvas)
             TileKind.CALENDAR -> drawCalendarBack(canvas)
             else -> drawBadgeFace(canvas)
         }
+    }
+
+    /**
+     * The live face: a headline with an optional smaller detail under it, the block centred
+     * in whatever space the tile's label leaves.
+     */
+    private fun drawLiveFace(canvas: Canvas, content: TileLive) {
+        val margin = context.dpf(10f)
+        val maxWidth = (width - margin * 2f).coerceAtLeast(1f)
+
+        bigPaint.color = foreground
+        bigPaint.textSize = minOf(height * 0.24f, context.sp(21f))
+        val headline = TextUtils.ellipsize(
+            content.headline,
+            bigPaint,
+            maxWidth,
+            TextUtils.TruncateAt.END,
+        ).toString()
+
+        smallPaint.color = foreground
+        smallPaint.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
+        smallPaint.textSize = context.sp(12f)
+        val detail = content.detail?.let {
+            TextUtils.ellipsize(it, smallPaint, maxWidth, TextUtils.TruncateAt.END).toString()
+        }
+
+        val headlineAscent = -bigPaint.ascent()
+        val headlineDescent = bigPaint.descent()
+        val detailAscent = -smallPaint.ascent()
+        val detailDescent = smallPaint.descent()
+        val innerGap = context.dpf(3f)
+        val blockHeight = headlineAscent + headlineDescent +
+            if (detail != null) innerGap + detailAscent + detailDescent else 0f
+
+        val labelReserve = if (tile.size.showsLabel) context.dpf(22f) else 0f
+        val areaBottom = height - labelReserve
+        val top = ((areaBottom - blockHeight) / 2f).coerceAtLeast(margin)
+
+        var baseline = top + headlineAscent
+        canvas.drawText(headline, margin, baseline, bigPaint)
+        if (detail != null) {
+            smallPaint.alpha = 215
+            baseline += headlineDescent + innerGap + detailAscent
+            canvas.drawText(detail, margin, baseline, smallPaint)
+            smallPaint.alpha = 255
+        }
+
+        if (tile.size.showsLabel) drawLabel(canvas, displayLabel().orEmpty())
     }
 
     private fun drawGlyphTile(canvas: Canvas, label: String?) {
@@ -487,6 +554,7 @@ class TileView(context: Context) : View(context) {
         TileKind.APP -> app?.label ?: tile.label
         TileKind.CLOCK -> context.getString(R.string.clock_tile)
         TileKind.CALENDAR -> context.getString(R.string.calendar_tile)
+        TileKind.MEDIA -> context.getString(R.string.media_tile)
         TileKind.ALL_APPS -> context.getString(R.string.all_apps)
         TileKind.SETTINGS -> context.getString(R.string.apogee_settings_tile)
     }
