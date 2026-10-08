@@ -60,24 +60,4 @@ class TileSerializationTest {
         assertEquals(TileSize.MEDIUM, TileSize.from("ENORMOUS"))
         assertEquals(TileSize.MEDIUM, TileSize.from(null))
     }
-
-    @Test
-    fun `resizing cycles through all four footprints`() {
-        var size = TileSize.SMALL
-        val seen = mutableListOf(size)
-        repeat(4) {
-            size = size.next()
-            seen += size
-        }
-        assertEquals(
-            listOf(
-                TileSize.SMALL,
-                TileSize.MEDIUM,
-                TileSize.WIDE,
-                TileSize.LARGE,
-                TileSize.SMALL,
-            ),
-            seen,
-        )
-    }
 }

@@ -82,7 +82,6 @@ class LauncherActivity : AppCompatActivity(), TileGrid.Host, Prefs.Listener {
                 ViewGroup.LayoutParams.MATCH_PARENT,
             )
             grid.host = this@LauncherActivity
-            onAllAppsClick = { showAppList() }
         }
         appListPage = AppListPage(this).apply {
             layoutParams = ViewGroup.LayoutParams(
@@ -326,12 +325,35 @@ class LauncherActivity : AppCompatActivity(), TileGrid.Host, Prefs.Listener {
 
     override fun onEditModeChanged(editing: Boolean) {
         editDone.isVisible = editing
-        startPage.setEditChromeVisible(editing)
         // Edit mode owns the horizontal gesture, or dragging a tile would flip the page.
         pager.isUserInputEnabled = !editing
     }
 
     override fun onEmptySpaceClick() = Unit
+
+    /** The full set of footprints, so resizing is not only the chevron's one-step cycle. */
+    override fun onTileMenu(tile: Tile, view: TileView) {
+        val entries = TileSize.entries.map { size ->
+            val label = getString(sizeLabel(size))
+            MetroContextMenu.Entry(
+                if (size == tile.size) getString(R.string.size_current, label) else label,
+            ) {
+                if (size != tile.size) tileStore.resize(tile.id, size)
+            }
+        } + MetroContextMenu.Entry(getString(R.string.unpin_from_start)) {
+            tileStore.unpin(tile.id)
+        }
+        contextMenu.show(view, entries)
+    }
+
+    private fun sizeLabel(size: TileSize): Int = when (size) {
+        TileSize.SMALL -> R.string.size_small
+        TileSize.MEDIUM -> R.string.size_medium
+        TileSize.WIDE -> R.string.size_wide
+        TileSize.LARGE -> R.string.size_large
+        TileSize.FULL -> R.string.size_full
+        TileSize.FULL_TALL -> R.string.size_full_tall
+    }
 
     // ---------------------------------------------------------------- app actions
 

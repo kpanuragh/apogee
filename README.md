@@ -11,9 +11,12 @@ right. No app drawer grid, no rounded icons, no drop shadows.
 **Start screen**
 
 - Live tiles on a six-unit grid (eight with *show more tiles*), packed flush the way Windows
-  10 Mobile packs them — a small tile drops back into the gap a wide tile left behind.
-- Four tile footprints: small, medium, wide and large. Long-press a tile and tap the chevron
-  to cycle through them, or the cross to unpin.
+  10 Mobile packs them — a small tile drops back into the gap a wide tile left behind. Gaps
+  sit only between tiles, so the grid is symmetric against both screen edges.
+- Six tile footprints: small (1x1), medium (2x2), wide (4x2), large (4x4), full width and
+  full width tall — the last two stretch to the grid, so they stay edge to edge whether
+  "show more tiles" is on or off. Long-press a tile to start editing, then tap the chevron to
+  cycle sizes, long-press again to pick one outright, or tap the cross to unpin.
 - Drag to rearrange, with the rest of the grid reflowing live around the tile you are holding.
 - The Windows Phone press effect: tiles pivot about their centre so the corner under your
   finger sinks into the screen.
@@ -121,13 +124,15 @@ fresh debug key — Android will refuse to install it over a previous build, so 
 data/      AppRepository (LauncherApps-backed app list), TileStore (persisted layout),
            TilePacker (the grid packing rule), Prefs, BadgeCounts
            (BadgeListenerService lives in src/badges, the flavour that declares it)
-ui/start/  TileGrid (custom ViewGroup: packing, drag reorder, edit mode), TileView (draws
-           one tile, including the press tilt and live faces), StartPage
+ui/start/  TileGrid (custom ViewGroup: pixel geometry, drag reorder, edit mode), TileView
+           (draws one tile, including the press tilt and live faces), StartPage
 ui/applist/AppListPage, AppListAdapter, LetterPickerView (the jump list)
 ui/        LauncherActivity (two pages in a ViewPager2), MetroContextMenu
 util/      AccentPalette, IconLoader (peels the glyph layer off adaptive icons), Launch
 ```
 
 The grid packing rule lives in `TilePacker` rather than in the view, so it can be reasoned
-about and tested on its own; `app/src/test` covers packing, layout persistence and app-list
+about and tested on its own. `app/src/test` covers packing, the pixel geometry (tile edges
+land flush with both margins, and leftover pixels from a grid that does not divide evenly
+are spread rather than dumped on the last column), layout persistence and app-list
 bucketing.

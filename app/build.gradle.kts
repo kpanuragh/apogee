@@ -22,7 +22,7 @@ android {
         minSdk = 24
         targetSdk = 35
         versionCode = 1
-        versionName = "1.1"
+        versionName = "1.2"
     }
 
     // Two builds of the same launcher. `standard` asks for nothing at all and installs

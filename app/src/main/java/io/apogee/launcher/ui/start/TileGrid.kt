@@ -46,6 +46,9 @@ class TileGrid(context: Context) : ViewGroup(context) {
         fun onResize(tile: Tile, next: TileSize)
         fun onReorder(from: Int, to: Int)
         fun onEditModeChanged(editing: Boolean)
+
+        /** A long press while already editing: offer the sizes outright. */
+        fun onTileMenu(tile: Tile, view: TileView)
         fun onEmptySpaceClick()
         val transparentTiles: Boolean
         val tiltEnabled: Boolean
@@ -58,9 +61,13 @@ class TileGrid(context: Context) : ViewGroup(context) {
     private val views = LinkedHashMap<String, TileView>()
     private val placement = HashMap<String, IntArray>() // tile id -> [row, col]
     private val previousBounds = HashMap<String, IntArray>() // tile id -> [left, top]
+    private val rects = HashMap<String, IntArray>() // tile id -> [left, top, right, bottom]
 
     private val gap = context.resources.getDimensionPixelSize(R.dimen.tile_gap)
-    private var cell = 0
+
+    /** Width of one grid unit plus one gap, in pixels. */
+    private var step = 0f
+    private var gridColumns = 6
     private var rows = 0
 
     var editMode = false
@@ -98,10 +105,12 @@ class TileGrid(context: Context) : ViewGroup(context) {
         views.keys.filterNot { it in keep }.forEach { id ->
             views.remove(id)?.let { removeView(it) }
             previousBounds.remove(id)
+            rects.remove(id)
         }
         for (tile in next) {
             val view = views.getOrPut(tile.id) {
                 previousBounds[tile.id] = intArrayOf(NONE, NONE)
+                rects[tile.id] = IntArray(4)
                 TileView(context).also { tv ->
                     tv.setOnClickListener(::onTileViewClick)
                     tv.setOnLongClickListener(::onTileViewLongClick)
@@ -157,23 +166,50 @@ class TileGrid(context: Context) : ViewGroup(context) {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = MeasureSpec.getSize(widthMeasureSpec)
         val columns = (host?.columns ?: 6).coerceAtLeast(1)
+        gridColumns = columns
         val usable = (width - paddingLeft - paddingRight).coerceAtLeast(columns)
-        cell = usable / columns
+
+        // One unit plus one gap. Gaps sit *between* tiles, so a row of tiles starts flush
+        // with the left padding and ends flush with the right: edge = round(index * step),
+        // and the last edge lands exactly on paddingLeft + usable. Working in floats and
+        // rounding each edge also spreads the leftover pixels of a grid that does not
+        // divide evenly, instead of dumping them all on the final column.
+        step = (usable + gap).toFloat() / columns
         rows = pack(columns)
 
         for (tile in tiles) {
             val view = views[tile.id] ?: continue
+            val rect = rectFor(tile) ?: continue
             view.measure(
-                MeasureSpec.makeMeasureSpec(spanPx(tile.size.cols), MeasureSpec.EXACTLY),
-                MeasureSpec.makeMeasureSpec(spanPx(tile.size.rows), MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(rect[2] - rect[0], MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(rect[3] - rect[1], MeasureSpec.EXACTLY),
             )
         }
 
-        val height = paddingTop + rows * cell + paddingBottom
+        val height = paddingTop + contentHeight() + paddingBottom
         setMeasuredDimension(width, maxOf(height, MeasureSpec.getSize(heightMeasureSpec)))
     }
 
-    private fun spanPx(span: Int) = (span * cell - gap).coerceAtLeast(1)
+    /** The pixel offset of grid line [index], measured from the content edge. */
+    private fun edge(index: Int): Int = Math.round(index * step)
+
+    private fun contentHeight(): Int = if (rows == 0) 0 else edge(rows) - gap
+
+    /**
+     * Resolves a tile's pixel bounds from its grid slot, into the array allocated when the
+     * tile was bound so that measure and layout allocate nothing.
+     */
+    private fun rectFor(tile: Tile): IntArray? {
+        val slot = placement[tile.id] ?: return null
+        val rect = rects[tile.id] ?: return null
+        val row = slot[0]
+        val col = slot[1]
+        rect[0] = paddingLeft + edge(col)
+        rect[1] = paddingTop + edge(row)
+        rect[2] = paddingLeft + edge(col + tile.size.cols(gridColumns)) - gap
+        rect[3] = paddingTop + edge(row + tile.size.rows) - gap
+        return rect
+    }
 
     /** Delegates to [TilePacker]; the grid only needs the resulting slots. */
     private fun pack(columns: Int): Int {
@@ -186,11 +222,11 @@ class TileGrid(context: Context) : ViewGroup(context) {
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         for (tile in tiles) {
             val view = views[tile.id] ?: continue
-            val cellPos = placement[tile.id] ?: continue
-            val left = paddingLeft + cellPos[1] * cell
-            val top = paddingTop + cellPos[0] * cell
-            val right = left + spanPx(tile.size.cols)
-            val bottom = top + spanPx(tile.size.rows)
+            val rect = rectFor(tile) ?: continue
+            val left = rect[0]
+            val top = rect[1]
+            val right = rect[2]
+            val bottom = rect[3]
 
             // Allocated when the tile was bound, so a reflow allocates nothing.
             val previous = previousBounds[tile.id] ?: continue
@@ -259,11 +295,13 @@ class TileGrid(context: Context) : ViewGroup(context) {
     private fun onTileViewLongClick(view: View): Boolean {
         val tv = view as? TileView ?: return false
         tv.resetTilt()
-        if (!editMode) {
+        view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+        if (editMode) {
+            // Already editing, so the chevron is on screen and the user wants more than the
+            // one-step cycle it offers: show every size at once.
+            host?.onTileMenu(tv.tile, tv)
+        } else {
             setEditMode(true)
-            view.performHapticFeedback(
-                android.view.HapticFeedbackConstants.LONG_PRESS,
-            )
         }
         return true
     }

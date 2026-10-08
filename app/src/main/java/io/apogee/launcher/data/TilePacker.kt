@@ -46,9 +46,10 @@ object TilePacker {
         }
 
         for (tile in tiles) {
-            // A tile wider than the grid is clamped rather than dropped, so switching to a
+            // Full-width tiles resolve against the current grid, and a fixed-width tile
+            // wider than the grid is clamped rather than dropped, so switching to a
             // narrower grid cannot lose a pinned tile.
-            val width = tile.size.cols.coerceAtMost(columns)
+            val width = tile.size.cols(columns)
             val height = tile.size.rows
             var row = 0
             while (true) {

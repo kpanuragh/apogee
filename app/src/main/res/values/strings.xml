@@ -9,6 +9,13 @@
     <string name="pin_to_start">pin to start</string>
     <string name="unpin_from_start">unpin from start</string>
     <string name="uninstall">uninstall</string>
+    <string name="size_small">small</string>
+    <string name="size_medium">medium</string>
+    <string name="size_wide">wide</string>
+    <string name="size_large">large</string>
+    <string name="size_full">full width</string>
+    <string name="size_full_tall">full width, tall</string>
+    <string name="size_current">%1$s \u2022 current</string>
     <string name="app_info">app info</string>
     <string name="hide_app">hide from app list</string>
     <string name="unhide_app">show in app list</string>

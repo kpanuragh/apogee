@@ -300,11 +300,14 @@ class TileView(context: Context) : View(context) {
 
     private fun drawGlyphTile(canvas: Canvas, label: String?) {
         val icon = glyph
-        val padding = when (tile.size) {
-            TileSize.SMALL -> width * 0.24f
-            TileSize.MEDIUM -> width * 0.26f
-            TileSize.WIDE -> height * 0.26f
-            TileSize.LARGE -> width * 0.30f
+        // Scale off the shorter side: a full-width banner is six units across but only two
+        // tall, so sizing from the width would give it an absurd glyph.
+        val shortSide = minOf(width, height).toFloat()
+        val padding = shortSide * when {
+            tile.size == TileSize.SMALL -> 0.24f
+            tile.size == TileSize.MEDIUM -> 0.26f
+            tile.size.isBanner -> 0.22f
+            else -> 0.30f
         }
         if (icon != null) {
             val available = minOf(
