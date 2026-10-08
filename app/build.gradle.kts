@@ -3,6 +3,16 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+/**
+ * Reads a signing credential from the environment first, then gradle.properties. Blank is
+ * treated as absent: CI passes an empty string for a secret that is not configured.
+ */
+fun credential(environmentVariable: String, property: String): String? =
+    (System.getenv(environmentVariable) ?: project.findProperty(property)?.toString())
+        ?.takeIf { it.isNotBlank() }
+
+val releaseKeystore = credential("APOGEE_KEYSTORE_FILE", "apogee.keystoreFile")
+
 android {
     namespace = "io.apogee.launcher"
     compileSdk = 35
@@ -15,8 +25,26 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        // Only declared when credentials are actually available, so a plain checkout still
+        // configures.
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = credential("APOGEE_KEYSTORE_PASSWORD", "apogee.keystorePassword")
+                keyAlias = credential("APOGEE_KEY_ALIAS", "apogee.keyAlias")
+                keyPassword = credential("APOGEE_KEY_PASSWORD", "apogee.keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // Fall back to the debug key so `assembleRelease` always produces an APK you can
+            // sideload and test. A debug-signed APK is fine for testing but cannot be
+            // published to Play — set the APOGEE_KEYSTORE_* credentials for that.
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

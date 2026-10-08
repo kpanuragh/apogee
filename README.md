@@ -51,6 +51,13 @@ The Android SDK is the only prerequisite; everything else comes down with the wr
 Point Gradle at your SDK with `local.properties` (`sdk.dir=/path/to/android-sdk`) or the
 `ANDROID_HOME` environment variable.
 
+`assembleRelease` always produces an installable APK: with no signing credentials configured
+it falls back to your local debug key. That is fine for sideloading and testing, but a
+debug-signed APK cannot be published to Play. To sign with your own key, set
+`APOGEE_KEYSTORE_FILE`, `APOGEE_KEYSTORE_PASSWORD`, `APOGEE_KEY_ALIAS` and
+`APOGEE_KEY_PASSWORD` as environment variables, or as `apogee.keystoreFile` and friends in
+`~/.gradle/gradle.properties`.
+
 After installing, make Apogee your home app: **Settings → Apps → Default apps → Home app**, or
 use *set Apogee as your home screen* in Apogee's own settings.
 
@@ -61,6 +68,32 @@ it.
 - `minSdk` 24, `targetSdk` 35
 - Kotlin, Android views (no Compose); `androidx.appcompat`, `recyclerview`, `viewpager2`
   and `palette`
+
+## CI and releases
+
+`.github/workflows/ci.yml` runs on every push and pull request (and on demand from the
+Actions tab): lint, unit tests, then both APKs. The debug and release APKs are uploaded as
+build artifacts, so a green run on any branch gives you something to install — open the run
+and download **apogee-release-apk**.
+
+`.github/workflows/release.yml` publishes a GitHub Release when you push a tag:
+
+```sh
+git tag v1.0 && git push origin v1.0
+```
+
+For a stable signature across builds, add these repository secrets (Settings → Secrets and
+variables → Actions):
+
+| Secret | Value |
+| --- | --- |
+| `APOGEE_KEYSTORE_BASE64` | your keystore, `base64 -w0 release.jks` |
+| `APOGEE_KEYSTORE_PASSWORD` | keystore password |
+| `APOGEE_KEY_ALIAS` | key alias |
+| `APOGEE_KEY_PASSWORD` | key password |
+
+Without them the workflow still builds and publishes an APK, but each build is signed with a
+fresh debug key — Android will refuse to install it over a previous build, so uninstall first.
 
 ## How it is put together
 

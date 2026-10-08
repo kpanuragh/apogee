@@ -1,0 +1,76 @@
+name: Release
+
+# Tag a commit to publish an APK:
+#   git tag v1.0 && git push origin v1.0
+#
+# Signing: set the repository secrets APOGEE_KEYSTORE_BASE64, APOGEE_KEYSTORE_PASSWORD,
+# APOGEE_KEY_ALIAS and APOGEE_KEY_PASSWORD to sign with your own upload key. Without them
+# the build falls back to a debug key, which is installable for testing but not publishable.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag name to publish the APK under"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish APK
+    runs-on: ubuntu-latest
+
+    env:
+      HAS_KEYSTORE: ${{ secrets.APOGEE_KEYSTORE_BASE64 != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Decode signing keystore
+        id: keystore
+        if: env.HAS_KEYSTORE == 'true'
+        run: |
+          echo "${{ secrets.APOGEE_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
+          echo "path=$RUNNER_TEMP/release.jks" >> "$GITHUB_OUTPUT"
+
+      - name: Build release APK
+        env:
+          APOGEE_KEYSTORE_FILE: ${{ steps.keystore.outputs.path }}
+          APOGEE_KEYSTORE_PASSWORD: ${{ secrets.APOGEE_KEYSTORE_PASSWORD }}
+          APOGEE_KEY_ALIAS: ${{ secrets.APOGEE_KEY_ALIAS }}
+          APOGEE_KEY_PASSWORD: ${{ secrets.APOGEE_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+
+      - name: Name the APK after the tag
+        id: apk
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          src=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
+          dest="apogee-${tag}.apk"
+          cp "$src" "$dest"
+          echo "path=$dest" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.apk.outputs.tag }}
+          files: ${{ steps.apk.outputs.path }}
+          generate_release_notes: true
+          body: |
+            Sideload `${{ steps.apk.outputs.path }}` to try Apogee, then set it as your
+            home app: **Settings → Apps → Default apps → Home app**.
+
+            Signed with ${{ env.HAS_KEYSTORE == 'true' && 'the repository upload key' || 'a per-build debug key, so uninstall any previous build before installing this one' }}.
