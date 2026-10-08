@@ -76,11 +76,14 @@ Actions tab): lint, unit tests, then both APKs. The debug and release APKs are u
 build artifacts, so a green run on any branch gives you something to install — open the run
 and download **apogee-release-apk**.
 
-`.github/workflows/release.yml` publishes a GitHub Release when you push a tag:
+`.github/workflows/release.yml` publishes a GitHub Release with the APK attached. It runs
+when you push to `main`, when you push a `v*` tag, or on demand from the Actions tab:
 
-```sh
-git tag v1.0 && git push origin v1.0
-```
+- **Push to `main`** — tags `v<versionName>` (read from `app/build.gradle.kts`) and releases
+  it. A version that already has a release is left alone, so pushing again does not
+  re-release it; bump `versionName` to cut the next one.
+- **Push a tag** — `git tag v1.1 && git push origin v1.1` releases exactly that tag.
+- **Manual run** — name a tag, or leave it blank for `v<versionName>`.
 
 For a stable signature across builds, add these repository secrets (Settings → Secrets and
 variables → Actions):

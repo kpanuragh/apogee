@@ -1,19 +1,25 @@
 name: Release
 
-# Tag a commit to publish an APK:
-#   git tag v1.0 && git push origin v1.0
+# Publishes a GitHub Release with the APK attached. Three ways in:
+#   * push to main    — tags v<versionName> from app/build.gradle.kts and releases it
+#   * push a v* tag   — releases that tag
+#   * manual run      — releases the tag you name, or v<versionName> by default
+#
+# A tag that already has a release is left alone, so pushing to main again does not
+# re-release the same version. Bump versionName to cut the next one.
 #
 # Signing: set the repository secrets APOGEE_KEYSTORE_BASE64, APOGEE_KEYSTORE_PASSWORD,
 # APOGEE_KEY_ALIAS and APOGEE_KEY_PASSWORD to sign with your own upload key. Without them
 # the build falls back to a debug key, which is installable for testing but not publishable.
 on:
   push:
+    branches: [main]
     tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag name to publish the APK under"
-        required: true
+        description: "Tag to publish (defaults to v<versionName>)"
+        required: false
 
 permissions:
   contents: write
@@ -29,23 +35,56 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Decide the tag
+        id: meta
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            tag="${{ github.ref_name }}"
+          elif [ -n "${INPUT_TAG:-}" ]; then
+            tag="$INPUT_TAG"
+          else
+            version=$(sed -n 's/.*versionName *= *"\(.*\)".*/\1/p' app/build.gradle.kts | head -1)
+            if [ -z "$version" ]; then
+              echo "::error::could not read versionName from app/build.gradle.kts"
+              exit 1
+            fi
+            tag="v$version"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+          # Never clobber a release that already exists.
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$tag is already released; nothing to do."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::publishing $tag"
+          fi
+
       - name: Set up JDK 17
+        if: steps.meta.outputs.exists == 'false'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Set up Gradle
+        if: steps.meta.outputs.exists == 'false'
         uses: gradle/actions/setup-gradle@v4
 
       - name: Decode signing keystore
         id: keystore
-        if: env.HAS_KEYSTORE == 'true'
+        if: steps.meta.outputs.exists == 'false' && env.HAS_KEYSTORE == 'true'
         run: |
           echo "${{ secrets.APOGEE_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.jks"
           echo "path=$RUNNER_TEMP/release.jks" >> "$GITHUB_OUTPUT"
 
       - name: Build release APK
+        if: steps.meta.outputs.exists == 'false'
         env:
           APOGEE_KEYSTORE_FILE: ${{ steps.keystore.outputs.path }}
           APOGEE_KEYSTORE_PASSWORD: ${{ secrets.APOGEE_KEYSTORE_PASSWORD }}
@@ -55,22 +94,33 @@ jobs:
 
       - name: Name the APK after the tag
         id: apk
+        if: steps.meta.outputs.exists == 'false'
         run: |
-          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          set -euo pipefail
           src=$(find app/build/outputs/apk/release -name "*.apk" | head -1)
-          dest="apogee-${tag}.apk"
+          if [ -z "$src" ]; then
+            echo "::error::no APK was produced"
+            exit 1
+          fi
+          dest="apogee-${{ steps.meta.outputs.tag }}.apk"
           cp "$src" "$dest"
           echo "path=$dest" >> "$GITHUB_OUTPUT"
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
+      # Creates the tag at this commit if it does not exist yet, which is how a push to
+      # main ends up tagged.
       - name: Publish the release
+        if: steps.meta.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.apk.outputs.tag }}
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: Apogee ${{ steps.meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           files: ${{ steps.apk.outputs.path }}
           generate_release_notes: true
           body: |
-            Sideload `${{ steps.apk.outputs.path }}` to try Apogee, then set it as your
-            home app: **Settings → Apps → Default apps → Home app**.
+            A Windows 10 Mobile-style home screen for Android.
+
+            Download `${{ steps.apk.outputs.path }}` below and sideload it, then set Apogee
+            as your home app: **Settings → Apps → Default apps → Home app**.
 
             Signed with ${{ env.HAS_KEYSTORE == 'true' && 'the repository upload key' || 'a per-build debug key, so uninstall any previous build before installing this one' }}.
