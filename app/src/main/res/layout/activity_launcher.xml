@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/launcher_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/pager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- The Windows 10 Mobile edit bar: a flat strip that confirms tile arrangement. -->
+    <TextView
+        android:id="@+id/edit_done"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/app_bar_height"
+        android:layout_gravity="bottom"
+        android:background="@color/chrome_dark"
+        android:gravity="center"
+        android:letterSpacing="0.04"
+        android:text="@string/done"
+        android:textColor="@color/metro_white"
+        android:textSize="16sp"
+        android:visibility="gone" />
+</FrameLayout>

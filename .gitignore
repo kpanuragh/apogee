@@ -1,0 +1,22 @@
+# Gradle / build output
+.gradle/
+build/
+captures/
+.cxx/
+.externalNativeBuild/
+.kotlin/
+
+# Local configuration (SDK location is machine-specific)
+local.properties
+
+# IDE
+*.iml
+.idea/
+
+# Artifacts and signing material
+*.apk
+*.aab
+*.keystore
+*.jks
+
+.DS_Store

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Apogee</string>
+
+    <string name="all_apps">all apps</string>
+    <string name="search_apps">search apps</string>
+    <string name="no_results">no apps found</string>
+
+    <string name="pin_to_start">pin to start</string>
+    <string name="unpin_from_start">unpin from start</string>
+    <string name="uninstall">uninstall</string>
+    <string name="app_info">app info</string>
+    <string name="hide_app">hide from app list</string>
+    <string name="unhide_app">show in app list</string>
+    <string name="done">done</string>
+
+    <string name="settings_title">Apogee settings</string>
+    <string name="settings_start">start screen</string>
+    <string name="settings_appearance">appearance</string>
+    <string name="settings_behaviour">behaviour</string>
+    <string name="settings_about">about</string>
+
+    <string name="pref_accent">accent colour</string>
+    <string name="pref_accent_summary">colours your tiles and highlights</string>
+    <string name="pref_theme">theme</string>
+    <string name="pref_theme_dark">dark</string>
+    <string name="pref_theme_light">light</string>
+    <string name="pref_theme_system">follow system</string>
+    <string name="pref_transparent_tiles">transparent tiles</string>
+    <string name="pref_transparent_tiles_summary">show the wallpaper through your tiles</string>
+    <string name="pref_monochrome">monochrome tile icons</string>
+    <string name="pref_monochrome_summary">flatten app icons into white glyphs</string>
+    <string name="pref_app_colours">colour tiles from app icons</string>
+    <string name="pref_app_colours_summary">use each app\'s own colour instead of the accent</string>
+    <string name="pref_show_more_tiles">show more tiles</string>
+    <string name="pref_show_more_tiles_summary">fit eight small tiles per row instead of six</string>
+    <string name="pref_badges">live notification badges</string>
+    <string name="pref_badges_summary">show unread counts on tiles</string>
+    <string name="pref_badges_grant">tap to grant notification access</string>
+    <string name="pref_live_tiles">animate live tiles</string>
+    <string name="pref_live_tiles_summary">flip clock, calendar and badge tiles</string>
+    <string name="pref_tilt">tile press tilt</string>
+    <string name="pref_tilt_summary">tilt tiles towards your finger when pressed</string>
+    <string name="pref_hidden_apps">hidden apps</string>
+    <string name="pref_set_default">set Apogee as your home screen</string>
+    <string name="pref_set_default_summary">opens Android\'s default apps settings</string>
+    <string name="pref_wallpaper">change wallpaper</string>
+    <string name="pref_reset_layout">reset start screen</string>
+    <string name="pref_reset_layout_summary">restore the default tile layout</string>
+    <string name="pref_version">version</string>
+
+    <string name="clock_tile">clock</string>
+    <string name="calendar_tile">calendar</string>
+    <string name="apogee_settings_tile">Apogee</string>
+
+    <string name="layout_reset">start screen reset</string>
+    <string name="pinned_toast">pinned to start</string>
+    <string name="unpinned_toast">unpinned</string>
+    <string name="cannot_open">couldn\'t open that app</string>
+</resources>

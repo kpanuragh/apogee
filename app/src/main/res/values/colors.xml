@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="metro_white">#FFFFFFFF</color>
+
+    <!-- Day values; values-night carries the dark equivalents. -->
+    <color name="page_bg">#FFF2F2F2</color>
+    <color name="chrome">#FFE6E6E6</color>
+    <color name="field_fill">#14000000</color>
+    <color name="field_stroke">#59000000</color>
+
+    <!-- The Start screen's edit bar always sits over the wallpaper, so it stays dark. -->
+    <color name="chrome_dark">#FF1F1F1F</color>
+
+    <!--
+      The accent palette itself lives in AccentPalette.kt, since the settings screen builds
+      its swatch grid in code. Only the launcher icon's background needs a resource.
+    -->
+    <color name="accent_cyan">#FF1BA1E2</color>
+</resources>

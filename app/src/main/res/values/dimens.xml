@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="tile_gap">6dp</dimen>
+    <dimen name="start_side_padding">12dp</dimen>
+    <dimen name="start_top_padding">28dp</dimen>
+    <dimen name="start_bottom_padding">96dp</dimen>
+
+    <dimen name="page_title_size">42sp</dimen>
+    <dimen name="section_header_size">26sp</dimen>
+    <dimen name="app_row_height">60dp</dimen>
+    <dimen name="app_row_icon">38dp</dimen>
+    <dimen name="app_label_size">18sp</dimen>
+    <dimen name="letter_bucket_size">52dp</dimen>
+    <dimen name="app_bar_height">56dp</dimen>
+    <dimen name="context_item_height">48dp</dimen>
+    <dimen name="context_item_size">17sp</dimen>
+</resources>

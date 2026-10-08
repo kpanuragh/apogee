@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="page_bg">#FF000000</color>
+    <color name="chrome">#FF1F1F1F</color>
+    <color name="field_fill">#26FFFFFF</color>
+    <color name="field_stroke">#59FFFFFF</color>
+</resources>

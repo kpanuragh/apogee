@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:attr/selectableItemBackground"
+    android:paddingStart="20dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="6dp">
+
+    <TextView
+        android:id="@+id/header_letter"
+        android:layout_width="@dimen/letter_bucket_size"
+        android:layout_height="@dimen/letter_bucket_size"
+        android:textAppearance="@style/Metro.SectionHeader" />
+</FrameLayout>

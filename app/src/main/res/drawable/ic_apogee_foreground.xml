@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Four tiles, the Windows Phone Start screen in miniature. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M32,32h20v20h-20z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M56,32h20v20h-20z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M32,56h20v20h-20z" />
+    <path
+        android:fillColor="#B3FFFFFF"
+        android:pathData="M56,56h20v20h-20z" />
+</vector>
