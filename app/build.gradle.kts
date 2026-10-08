@@ -13,6 +13,23 @@ fun credential(environmentVariable: String, property: String): String? =
 
 val releaseKeystore = credential("APOGEE_KEYSTORE_FILE", "apogee.keystoreFile")
 
+/**
+ * The single source of truth for the version. The code is derived from the name so the two
+ * can never drift: Google Play rejects an upload whose versionCode has not increased, and
+ * Android needs it to increase to treat an install as an upgrade rather than a reinstall.
+ */
+val appVersionName = "1.4"
+
+val appVersionCode = appVersionName.split(".")
+    .map { it.toIntOrNull() ?: error("version '$appVersionName' must be numeric, dot-separated") }
+    .let { parts ->
+        val major = parts.getOrElse(0) { 0 }
+        val minor = parts.getOrElse(1) { 0 }
+        val patch = parts.getOrElse(2) { 0 }
+        require(minor < 100 && patch < 100) { "minor and patch must each stay under 100" }
+        major * 10_000 + minor * 100 + patch
+    }
+
 android {
     namespace = "io.apogee.launcher"
     compileSdk = 35
@@ -21,8 +38,8 @@ android {
         applicationId = "io.apogee.launcher"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.3"
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
 
     // Two builds of the same launcher. `standard` asks for nothing at all and installs

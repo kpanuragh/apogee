@@ -95,6 +95,31 @@ counted until you grant it, and the toggle is hidden entirely in the standard bu
 - Kotlin, Android views (no Compose); `androidx.appcompat`, `recyclerview`, `viewpager2`
   and `palette`
 
+## Publishing
+
+Play Protect's sideload block is about *where an app came from*, not about the permission
+being disallowed: it fires on apps installed from a browser, file manager or messaging app
+that declare `RECEIVE_SMS`, `READ_SMS`, a notification listener or an accessibility service.
+Apps installed from Play are not subject to it, having been reviewed already — which is why
+launchers on Play show notification badges with the same permission that gets this APK
+blocked when sideloaded.
+
+So the `badges` flavour's route to users is Play, not a download link:
+
+1. A Play Console account ($25, one-off). A **personal** account created after 13 Nov 2023
+   must first run a closed test with 12 testers opted in continuously for 14 days before it
+   can apply for production access; organization accounts are reported to be exempt.
+2. Upload the App Bundle, not the APK: `./gradlew bundleBadgesRelease`.
+3. Declare the notification listener in the Play Console permissions declaration, and
+   describe the badge and now-playing features in the store listing. Play requires sensitive
+   permissions to be core functionality that the listing documents, and reviews the claim.
+
+The `standard` flavour needs none of this and can be handed round as an APK.
+
+`versionCode` is derived from `versionName` in `app/build.gradle.kts` so the two cannot
+drift — Play rejects an upload whose `versionCode` has not increased, and Android needs it
+to increase to treat an install as an upgrade.
+
 ## CI and releases
 
 `.github/workflows/ci.yml` runs on every push and pull request (and on demand from the

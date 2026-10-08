@@ -90,7 +90,7 @@ jobs:
           APOGEE_KEYSTORE_PASSWORD: ${{ secrets.APOGEE_KEYSTORE_PASSWORD }}
           APOGEE_KEY_ALIAS: ${{ secrets.APOGEE_KEY_ALIAS }}
           APOGEE_KEY_PASSWORD: ${{ secrets.APOGEE_KEY_PASSWORD }}
-        run: ./gradlew assembleStandardRelease assembleBadgesRelease
+        run: ./gradlew assembleStandardRelease assembleBadgesRelease bundleBadgesRelease
 
       - name: Name the APKs after the tag
         id: apk
@@ -108,6 +108,11 @@ jobs:
           done
           echo "standard=apogee-$tag-standard.apk" >> "$GITHUB_OUTPUT"
           echo "badges=apogee-$tag-badges.apk" >> "$GITHUB_OUTPUT"
+
+          # The Play upload format. Not attached to the release; it is only useful to
+          # whoever is publishing, and it is built here so it cannot rot.
+          aab=$(find app/build/outputs/bundle -name "*.aab" | head -1)
+          [ -n "$aab" ] && cp "$aab" "apogee-$tag.aab" || true
 
       # Creates the tag at this commit if it does not exist yet, which is how a push to
       # main ends up tagged.
